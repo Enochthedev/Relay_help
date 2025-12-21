@@ -1,0 +1,8 @@
+{
+  "version": "2",
+  "phaseApp": "RelayHelp",
+  "appId": "f00f6ba7-2065-43a6-86fe-482958a2945d",
+  "defaultEnv": "Development",
+  "envId": "ad7bba9b-8c4c-4782-9026-7ce8367f4959",
+  "monorepoSupport": true
+}
