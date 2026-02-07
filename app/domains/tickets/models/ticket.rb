@@ -3,6 +3,7 @@ class Ticket < ApplicationRecord
   belongs_to :customer
   belongs_to :workspace
   belongs_to :assigned_to, class_name: "User", optional: true
+  has_many :messages, dependent: :destroy
 
   # Enums
   enum status: {
@@ -66,15 +67,15 @@ class Ticket < ApplicationRecord
   end
 
   def resolve!
-    update!(status: "resolved")
+    update!(status: "resolved", closed_at: Time.current)
   end
 
   def close!
-    update!(status: "closed")
+    update!(status: "closed", closed_at: Time.current)
   end
 
   def open!
-    update!(status: "open")
+    update!(status: "open", closed_at: nil)
   end
 
   def response_time

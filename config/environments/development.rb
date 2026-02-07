@@ -8,6 +8,19 @@ Rails.application.configure do
   # since you don't have to restart the web server when you make code changes.
   config.enable_reloading = true
 
+  # Lograge for cleaner logs
+  config.lograge.enabled = true
+  config.lograge.formatter = Lograge::Formatters::Json.new
+  
+  config.lograge.custom_options = lambda do |event|
+    {
+      user_id: event.payload[:user_id],
+      workspace_id: event.payload[:workspace_id],
+      ip: event.payload[:ip],
+      host: event.payload[:host]
+    }
+  end
+
   # Do not eager load code on boot.
   config.eager_load = false
 

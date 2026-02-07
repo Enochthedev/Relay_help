@@ -2,6 +2,7 @@ class Customer < ApplicationRecord
   # Associations
   belongs_to :workspace
   has_many :tickets, dependent: :destroy
+  has_many :messages, dependent: :nullify
 
   #Validations
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
@@ -23,7 +24,7 @@ class Customer < ApplicationRecord
   end
 
   def increment_ticket_count!
-    increment!(:ticket_balance)
+    increment!(:total_tickets)
   end
 
   def display_name

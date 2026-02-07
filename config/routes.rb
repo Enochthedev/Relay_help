@@ -1,6 +1,7 @@
 require "sidekiq/web"
 
 Rails.application.routes.draw do
+  get '/health', to: 'health#show'
   devise_for :users
   get 'pages/home'
   # Sidekiq admin (will secure later)

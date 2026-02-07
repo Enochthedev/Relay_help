@@ -9,6 +9,7 @@ gem "redis", "~> 5.0"
 gem "connection_pool", "~> 2.5" # Avoid 3.0.x syntax error with Ruby 3.3.0
 gem "sidekiq", "~> 7.0"
 
+
 # Frontend
 gem "propshaft"
 gem "turbo-rails"
@@ -18,6 +19,23 @@ gem "importmap-rails"
 
 # Auth
 gem "devise"
+
+# Error tracking
+gem 'sentry-ruby'
+gem 'sentry-rails'
+
+# Structured logging
+gem 'lograge'
+
+# Performance monitoring (optional for MVP, but recommended)
+gem 'appsignal'
+
+# API
+gem 'rack-cors'
+
+# JWT Authentication
+gem 'devise'
+gem 'devise-jwt'
 
 # Environment variables are injected by Phase CLI (phase run bin/dev)
 

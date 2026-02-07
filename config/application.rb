@@ -26,6 +26,30 @@ module RelayHelp
     config.generators do |g|
       g.orm :active_record, primary_key_type: :uuid
     end
+
+    config.api_only = true
+
+    # Add CORS support for Next.js frontend
+    config.middleware.insert_before 0, Rack::Cors do
+      allow do
+        # Use CORS_ORIGINS env var in production, fallback to localhost for dev
+        # Set CORS_ORIGINS="https://app.example.com,https://staging.example.com" in production
+        allowed_origins = ENV.fetch("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001")
+                            .split(",")
+                            .map(&:strip)
+
+        origins(*allowed_origins)
+
+        resource "*",
+          headers: :any,
+          methods: [:get, :post, :put, :patch, :delete, :options, :head],
+          credentials: true,
+          # Expose headers the frontend might need
+          expose: %w[X-Total-Count X-Page X-Per-Page Authorization],
+          # Cache preflight requests for 1 hour (reduces OPTIONS requests)
+          max_age: 3600
+      end
+    end
     
     # Load domain folders
     config.eager_load_paths += Dir["#{config.root}/app/domains/**/"]

@@ -81,6 +81,19 @@ Rails.application.configure do
   # the I18n.default_locale when a translation cannot be found).
   config.i18n.fallbacks = true
 
+  # Lograge for cleaner logs
+  config.lograge.enabled = true
+  config.lograge.formatter = Lograge::Formatters::Json.new
+  
+  config.lograge.custom_options = lambda do |event|
+    {
+      user_id: event.payload[:user_id],
+      workspace_id: event.payload[:workspace_id],
+      ip: event.payload[:ip],
+      host: event.payload[:host]
+    }
+  end
+
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
