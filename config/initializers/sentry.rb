@@ -19,11 +19,4 @@ Sentry.init do |config|
 
   # Filter sensitive parameters
   config.send_default_pii = false
-
-  # Fix SSL certificate verification on macOS
-  # This configures the HTTP transport to use proper SSL settings
-  config.transport.ssl = {
-    ca_file: "/private/etc/ssl/cert.pem",
-    verify_mode: OpenSSL::SSL::VERIFY_PEER
-  }
 end
