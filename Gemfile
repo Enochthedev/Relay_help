@@ -29,6 +29,7 @@ gem 'appsignal'
 
 # API
 gem 'rack-cors'
+gem 'rack-attack'
 gem 'jsonapi-serializer'
 
 # Background jobs - PostgreSQL-based (no Redis needed!)
