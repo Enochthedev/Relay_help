@@ -1,0 +1,19 @@
+# Solid Queue recurring jobs
+# These replace sidekiq-scheduler
+
+cleanup_jwt_denylist:
+  class: JwtDenylistCleanupJob
+  schedule: every day at 3am
+  
+cleanup_refresh_tokens:
+  class: RefreshTokenCleanupJob
+  schedule: every day at 4am
+
+cleanup_widget_sessions:
+  class: WidgetSessionCleanupJob
+  schedule: every hour
+
+# Process outbox events (fallback - main processing is via LISTEN/NOTIFY)
+process_outbox:
+  class: OutboxProcessorJob
+  schedule: every minute

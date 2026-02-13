@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_01_21_175853) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_09_223000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -72,14 +72,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_21_175853) do
 
   create_table "customers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "workspace_id"
-    t.string "email", null: false
+    t.string "email"
     t.string "name"
     t.datetime "first_seen_at"
     t.datetime "last_seen_at"
     t.integer "total_tickets", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "fingerprint"
+    t.jsonb "browser_info", default: {}
     t.index ["workspace_id", "email"], name: "index_customers_on_workspace_and_email", unique: true
+    t.index ["workspace_id", "fingerprint"], name: "index_customers_on_workspace_and_fingerprint"
     t.index ["workspace_id"], name: "index_customers_on_workspace_id"
   end
 
@@ -93,6 +96,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_21_175853) do
     t.datetime "updated_at", null: false
     t.index ["guild_id"], name: "index_discord_guilds_on_guild_id", unique: true
     t.index ["workspace_id"], name: "index_discord_guilds_on_workspace_id", unique: true
+  end
+
+  create_table "jwt_denylist", force: :cascade do |t|
+    t.string "jti", null: false
+    t.datetime "exp", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["jti"], name: "index_jwt_denylist_on_jti", unique: true
   end
 
   create_table "messages", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -110,6 +121,158 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_21_175853) do
     t.index ["message_type"], name: "index_messages_on_message_type"
     t.index ["ticket_id"], name: "index_messages_on_ticket_id"
     t.index ["user_id"], name: "index_messages_on_user_id"
+  end
+
+  create_table "outbox_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "event_type", null: false
+    t.string "aggregate_type", null: false
+    t.uuid "aggregate_id", null: false
+    t.jsonb "payload", default: {}, null: false
+    t.string "status", default: "pending", null: false
+    t.integer "attempts", default: 0, null: false
+    t.string "last_error"
+    t.datetime "processed_at"
+    t.datetime "created_at", null: false
+    t.index ["aggregate_type", "aggregate_id"], name: "index_outbox_events_on_aggregate_type_and_aggregate_id"
+    t.index ["created_at"], name: "index_outbox_events_on_created_at"
+    t.index ["event_type"], name: "index_outbox_events_on_event_type"
+    t.index ["status"], name: "index_outbox_events_on_status"
+  end
+
+  create_table "refresh_tokens", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "token_digest", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "revoked_at"
+    t.string "user_agent"
+    t.string "ip_address"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_refresh_tokens_on_expires_at"
+    t.index ["token_digest"], name: "index_refresh_tokens_on_token_digest", unique: true
+    t.index ["user_id", "revoked_at"], name: "index_refresh_tokens_on_user_id_and_revoked_at"
+    t.index ["user_id"], name: "index_refresh_tokens_on_user_id"
+  end
+
+  create_table "solid_queue_blocked_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.string "queue_name", null: false
+    t.integer "priority", default: 0, null: false
+    t.string "concurrency_key", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.index ["concurrency_key", "priority", "job_id"], name: "index_solid_queue_blocked_executions_for_release"
+    t.index ["expires_at", "concurrency_key"], name: "index_solid_queue_blocked_executions_for_maintenance"
+    t.index ["job_id"], name: "index_solid_queue_blocked_executions_on_job_id", unique: true
+  end
+
+  create_table "solid_queue_claimed_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.bigint "process_id"
+    t.datetime "created_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_claimed_executions_on_job_id", unique: true
+    t.index ["process_id", "job_id"], name: "index_solid_queue_claimed_executions_on_process_id_and_job_id"
+  end
+
+  create_table "solid_queue_failed_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.text "error"
+    t.datetime "created_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_failed_executions_on_job_id", unique: true
+  end
+
+  create_table "solid_queue_jobs", force: :cascade do |t|
+    t.string "queue_name", null: false
+    t.string "class_name", null: false
+    t.text "arguments"
+    t.integer "priority", default: 0, null: false
+    t.string "active_job_id"
+    t.datetime "scheduled_at"
+    t.datetime "finished_at"
+    t.string "concurrency_key"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active_job_id"], name: "index_solid_queue_jobs_on_active_job_id"
+    t.index ["class_name"], name: "index_solid_queue_jobs_on_class_name"
+    t.index ["finished_at"], name: "index_solid_queue_jobs_on_finished_at"
+    t.index ["queue_name", "finished_at"], name: "index_solid_queue_jobs_for_filtering"
+    t.index ["scheduled_at", "finished_at"], name: "index_solid_queue_jobs_for_alerting"
+  end
+
+  create_table "solid_queue_pauses", force: :cascade do |t|
+    t.string "queue_name", null: false
+    t.datetime "created_at", null: false
+    t.index ["queue_name"], name: "index_solid_queue_pauses_on_queue_name", unique: true
+  end
+
+  create_table "solid_queue_processes", force: :cascade do |t|
+    t.string "kind", null: false
+    t.datetime "last_heartbeat_at", null: false
+    t.bigint "supervisor_id"
+    t.integer "pid", null: false
+    t.string "hostname"
+    t.text "metadata"
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.index ["last_heartbeat_at"], name: "index_solid_queue_processes_on_last_heartbeat_at"
+    t.index ["name", "supervisor_id"], name: "index_solid_queue_processes_on_name_and_supervisor_id", unique: true
+    t.index ["supervisor_id"], name: "index_solid_queue_processes_on_supervisor_id"
+  end
+
+  create_table "solid_queue_ready_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.string "queue_name", null: false
+    t.integer "priority", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_ready_executions_on_job_id", unique: true
+    t.index ["priority", "job_id"], name: "index_solid_queue_poll_all"
+    t.index ["queue_name", "priority", "job_id"], name: "index_solid_queue_poll_by_queue"
+  end
+
+  create_table "solid_queue_recurring_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.string "task_key", null: false
+    t.datetime "run_at", null: false
+    t.datetime "created_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_recurring_executions_on_job_id", unique: true
+    t.index ["task_key", "run_at"], name: "index_solid_queue_recurring_executions_on_task_key_and_run_at", unique: true
+  end
+
+  create_table "solid_queue_recurring_tasks", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "schedule", null: false
+    t.string "command", limit: 2048
+    t.string "class_name"
+    t.text "arguments"
+    t.string "queue_name"
+    t.integer "priority", default: 0
+    t.boolean "static", default: true, null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_solid_queue_recurring_tasks_on_key", unique: true
+    t.index ["static"], name: "index_solid_queue_recurring_tasks_on_static"
+  end
+
+  create_table "solid_queue_scheduled_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.string "queue_name", null: false
+    t.integer "priority", default: 0, null: false
+    t.datetime "scheduled_at", null: false
+    t.datetime "created_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_scheduled_executions_on_job_id", unique: true
+    t.index ["scheduled_at", "priority", "job_id"], name: "index_solid_queue_dispatch_all"
+  end
+
+  create_table "solid_queue_semaphores", force: :cascade do |t|
+    t.string "key", null: false
+    t.integer "value", default: 1, null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_solid_queue_semaphores_on_expires_at"
+    t.index ["key", "value"], name: "index_solid_queue_semaphores_on_key_and_value"
+    t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
   create_table "tickets", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -131,6 +294,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_21_175853) do
     t.datetime "updated_at", null: false
     t.integer "sla_target"
     t.datetime "closed_at"
+    t.uuid "widget_session_id"
+    t.string "source_url"
     t.index ["assigned_to_id"], name: "index_tickets_on_assigned_to_id"
     t.index ["category"], name: "index_tickets_on_category"
     t.index ["closed_at"], name: "index_tickets_on_closed_at"
@@ -138,6 +303,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_21_175853) do
     t.index ["customer_id"], name: "index_tickets_on_customer_id"
     t.index ["status"], name: "index_tickets_on_status"
     t.index ["subcategory"], name: "index_tickets_on_subcategory"
+    t.index ["widget_session_id"], name: "index_tickets_on_widget_session_id"
     t.index ["workspace_id", "ticket_number"], name: "index_tickets_on_workspace_and_number", unique: true
     t.index ["workspace_id"], name: "index_tickets_on_workspace_id"
   end
@@ -178,6 +344,54 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_21_175853) do
     t.index ["workspace_id"], name: "index_users_on_workspace_id"
   end
 
+  create_table "widget_keys", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "workspace_id", null: false
+    t.string "public_key", null: false
+    t.string "secret_key", null: false
+    t.string "label", default: "Default", null: false
+    t.text "allowed_domains", default: [], array: true
+    t.datetime "last_used_at"
+    t.integer "requests_count", default: 0
+    t.string "status", default: "active"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["public_key"], name: "index_widget_keys_on_public_key", unique: true
+    t.index ["status"], name: "index_widget_keys_on_status"
+    t.index ["workspace_id"], name: "index_widget_keys_on_workspace_id"
+  end
+
+  create_table "widget_sessions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "workspace_id", null: false
+    t.uuid "customer_id"
+    t.string "session_token", null: false
+    t.string "fingerprint"
+    t.string "page_url"
+    t.string "referrer"
+    t.jsonb "metadata", default: {}
+    t.boolean "websocket_connected", default: false
+    t.datetime "last_seen_at"
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id"], name: "index_widget_sessions_on_customer_id"
+    t.index ["expires_at"], name: "index_widget_sessions_on_expires_at"
+    t.index ["session_token"], name: "index_widget_sessions_on_session_token", unique: true
+    t.index ["workspace_id", "websocket_connected"], name: "index_widget_sessions_active"
+    t.index ["workspace_id"], name: "index_widget_sessions_on_workspace_id"
+  end
+
+  create_table "workspace_memberships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.uuid "workspace_id", null: false
+    t.string "role", default: "member", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["role"], name: "index_workspace_memberships_on_role"
+    t.index ["user_id", "workspace_id"], name: "index_workspace_memberships_on_user_id_and_workspace_id", unique: true
+    t.index ["user_id"], name: "index_workspace_memberships_on_user_id"
+    t.index ["workspace_id"], name: "index_workspace_memberships_on_workspace_id"
+  end
+
   create_table "workspaces", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.string "slug", null: false
@@ -193,9 +407,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_21_175853) do
     t.string "lockdown_reason"
     t.datetime "lockdown_activated_at"
     t.uuid "lockdown_activated_by_id"
+    t.string "widget_api_key"
+    t.string "widget_secret_key"
+    t.string "allowed_domains", default: [], array: true
+    t.jsonb "widget_settings", default: {"theme"=>"light", "greeting"=>"Hi! How can we help you today?", "position"=>"bottom-right", "require_email"=>true, "show_branding"=>true, "offline_message"=>"We are currently offline. Leave a message and we will get back to you."}
     t.index ["lockdown_activated_by_id"], name: "index_workspaces_on_lockdown_activated_by_id"
     t.index ["lockdown_mode"], name: "index_workspaces_on_lockdown_mode"
     t.index ["slug"], name: "index_workspaces_on_slug", unique: true
+    t.index ["widget_api_key"], name: "index_workspaces_on_widget_api_key", unique: true
   end
 
   add_foreign_key "ai_requests", "tickets"
@@ -210,9 +429,22 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_21_175853) do
   add_foreign_key "messages", "customers"
   add_foreign_key "messages", "tickets"
   add_foreign_key "messages", "users"
+  add_foreign_key "refresh_tokens", "users"
+  add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "tickets", "customers"
   add_foreign_key "tickets", "users", column: "assigned_to_id"
+  add_foreign_key "tickets", "widget_sessions"
   add_foreign_key "tickets", "workspaces"
   add_foreign_key "users", "workspaces"
+  add_foreign_key "widget_keys", "workspaces"
+  add_foreign_key "widget_sessions", "customers"
+  add_foreign_key "widget_sessions", "workspaces"
+  add_foreign_key "workspace_memberships", "users"
+  add_foreign_key "workspace_memberships", "workspaces"
   add_foreign_key "workspaces", "users", column: "lockdown_activated_by_id"
 end

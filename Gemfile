@@ -5,10 +5,6 @@ gem "rails", "~> 7.1.5"
 gem "bootsnap", require: false
 gem "pg", "~> 1.5"
 gem "puma", "~> 6.0"
-gem "redis", "~> 5.0"
-gem "connection_pool", "~> 2.5" # Avoid 3.0.x syntax error with Ruby 3.3.0
-gem "sidekiq", "~> 7.0"
-
 
 # Frontend
 gem "propshaft"
@@ -19,6 +15,7 @@ gem "importmap-rails"
 
 # Auth
 gem "devise"
+gem 'devise-jwt'
 
 # Error tracking
 gem 'sentry-ruby'
@@ -32,15 +29,13 @@ gem 'appsignal'
 
 # API
 gem 'rack-cors'
+gem 'jsonapi-serializer'
 
-# JWT Authentication
-gem 'devise'
-gem 'devise-jwt'
+# Background jobs - PostgreSQL-based (no Redis needed!)
+gem "solid_queue"
+gem "mission_control-jobs"  # Admin UI for jobs
 
 # Environment variables are injected by Phase CLI (phase run bin/dev)
-
-# Background jobs
-gem "sidekiq-scheduler"
 
 group :development, :test do
   gem "debug"

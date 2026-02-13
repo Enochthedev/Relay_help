@@ -1,22 +1,24 @@
 class User < ApplicationRecord
-  # Devise modules - removed :validatable to handle passwords manually
+  # Devise modules
   devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :trackable
+         :recoverable, :rememberable, :trackable,
+         :jwt_authenticatable, jwt_revocation_strategy: JwtDenylist
 
   # Associations
+  # workspace_id on User table functions as the "current" workspace context
   belongs_to :workspace
+  
+  has_many :workspace_memberships, dependent: :destroy
+  has_many :workspaces, through: :workspace_memberships
+
   has_many :assigned_tickets, class_name: "Ticket", foreign_key: "assigned_to_id", dependent: :nullify
   has_many :messages, dependent: :nullify
+  has_many :refresh_tokens, dependent: :delete_all
 
-  # Enums
-  enum role: {
-    member: "member",
-    admin: "admin",
-    owner: "owner"
-  }
+  # Delegated role methods (based on current workspace context)
+  delegate :role, to: :current_membership, allow_nil: true
 
   # Validations
-  validates :role, presence: true
   validates :email, presence: true, uniqueness: { case_sensitive: false }
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
   validates :discord_user_id, uniqueness: true, allow_nil: true
@@ -24,12 +26,29 @@ class User < ApplicationRecord
 
   # Scopes
   scope :platform_admins, -> { where(platform_admin: true) }
-  scope :workspace_admins, -> { where(role: ["admin", "owner"]) }
   scope :with_discord, -> { where.not(discord_user_id: nil) }
   scope :pending_invitations, -> { where(invitation_status: "pending") }
   scope :accepted_invitations, -> { where(invitation_status: "accepted") }
   
-  # Instance methods - Basic info
+  # Instance methods
+  def current_membership
+    return nil unless workspace_id
+    workspace_memberships.find_by(workspace_id: workspace_id)
+  end
+
+  # Role checks based on current workspace context
+  def owner?
+    current_membership&.owner?
+  end
+
+  def admin?
+    current_membership&.admin?
+  end
+
+  def member?
+    current_membership&.member?
+  end
+
   def workspace_admin?
     admin? || owner?
   end

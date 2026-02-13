@@ -1,0 +1,35 @@
+# Solid Queue configuration
+# PostgreSQL-based job queue - no Redis needed!
+
+default: &default
+  dispatchers:
+    - polling_interval: 1
+      batch_size: 500
+  workers:
+    - queues: [critical, default, low]
+      threads: 5
+      polling_interval: 0.1  # Fast polling for near-instant job pickup
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+  workers:
+    - queues: "*"
+      threads: 3
+      polling_interval: 0.1
+
+production:
+  <<: *default
+  dispatchers:
+    - polling_interval: 1
+      batch_size: 500
+      concurrency_maintenance_interval: 30
+  workers:
+    - queues: [critical]
+      threads: 3
+      polling_interval: 0.1
+    - queues: [default, low]
+      threads: 5
+      polling_interval: 0.2

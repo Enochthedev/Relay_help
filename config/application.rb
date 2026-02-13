@@ -29,6 +29,12 @@ module RelayHelp
 
     config.api_only = true
 
+    # Add session middleware for Devise (required for JWT auth flow)
+    # This is minimal - just enough for Devise's sign_in helper
+    config.session_store :cookie_store, key: '_relay_help_session'
+    config.middleware.use ActionDispatch::Cookies
+    config.middleware.use ActionDispatch::Session::CookieStore, config.session_options
+
     # Add CORS support for Next.js frontend
     config.middleware.insert_before 0, Rack::Cors do
       allow do
@@ -56,6 +62,14 @@ module RelayHelp
     
     # Autoload lib directory
     config.autoload_lib(ignore: %w(assets tasks))
+
+    # CamelCase JSON responses for JavaScript frontend
+    require_relative '../lib/middleware/camel_case_response_middleware'
+    config.middleware.use CamelCaseResponseMiddleware
+
+    # snake_case incoming JSON params from JavaScript frontend
+    require_relative '../lib/middleware/snake_case_params_middleware'
+    config.middleware.use SnakeCaseParamsMiddleware
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.

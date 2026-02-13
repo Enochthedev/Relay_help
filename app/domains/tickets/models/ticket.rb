@@ -3,6 +3,7 @@ class Ticket < ApplicationRecord
   belongs_to :customer
   belongs_to :workspace
   belongs_to :assigned_to, class_name: "User", optional: true
+  belongs_to :widget_session, optional: true
   has_many :messages, dependent: :destroy
 
   # Enums
@@ -22,7 +23,8 @@ class Ticket < ApplicationRecord
   }
 
   enum source: {
-    discord: "discord",
+    widget: "widget",    # Primary: from embedded support widget
+    discord: "discord",  # From Discord (agent-initiated)
     email: "email",
     web: "web",
     webhook: "webhook",

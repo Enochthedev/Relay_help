@@ -1,9 +1,9 @@
 class CreateTickets < ActiveRecord::Migration[7.1]
   def change
     create_table :tickets, id: :uuid do |t|
-      t.references :customer, type: :uuid, null: false, foreign_key: true
-      t.references :workspace, type: :uuid, null: false, foreign_key: true
-      t.references :assigned_to, type: :uuid, foreign_key: { to_table: :users }, null: true
+      t.references :customer, type: :uuid, null: false, foreign_key: true, index: false
+      t.references :workspace, type: :uuid, null: false, foreign_key: true, index: false
+      t.references :assigned_to, type: :uuid, foreign_key: { to_table: :users }, null: true, index: false
       t.string :ticket_number, null: false
       t.string :subject, null: false
       t.text :description, null: false
@@ -18,10 +18,12 @@ class CreateTickets < ActiveRecord::Migration[7.1]
 
       t.timestamps
     end
-    add_index :tickets, [:workspace_id, :ticket_number], unique: true, name: "index_tickets_on_workspace_and_number"
-    add_index :tickets, :status
-    add_index :tickets, :customer_id
-    add_index :tickets, :assigned_to_id
-    add_index :tickets, :created_at
+    
+    add_index :tickets, [:workspace_id, :ticket_number], unique: true, name: "index_tickets_on_workspace_and_number", if_not_exists: true
+    add_index :tickets, :status, if_not_exists: true
+    add_index :tickets, :customer_id, if_not_exists: true
+    add_index :tickets, :workspace_id, if_not_exists: true
+    add_index :tickets, :assigned_to_id, if_not_exists: true
+    add_index :tickets, :created_at, if_not_exists: true
   end
 end

@@ -1,2 +1,6 @@
-web: bin/rails server
-css: bin/rails tailwindcss:watch
+# Procfile.dev for local development
+# Run with: overmind start or foreman start -f Procfile.dev
+
+web: bin/rails server -p 3001
+worker: bin/rails solid_queue:start
+outbox: bin/rails runner 'OutboxProcessor.new.run'
