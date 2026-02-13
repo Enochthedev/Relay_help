@@ -45,11 +45,14 @@ Rails.application.configure do
   # config.action_cable.allowed_request_origins = [ "http://example.com", /http:\/\/example.*/ ]
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  # Can be used together with config.force_ssl for Strict-Transport-Security and secure cookies.
-  # config.assume_ssl = true
+  # Railway terminates SSL at the load balancer, so we trust the proxy headers
+  # rather than redirecting HTTP→HTTPS (which would break health checks).
+  config.assume_ssl = true
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  config.force_ssl = true
+  # NOTE: Disabled because Railway handles SSL termination at the load balancer.
+  # Enabling this causes redirect loops since Railway forwards plain HTTP internally.
+  # config.force_ssl = true
 
   # Log to STDOUT by default
   config.logger = ActiveSupport::Logger.new(STDOUT)
