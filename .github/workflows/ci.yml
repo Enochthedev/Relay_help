@@ -9,8 +9,8 @@ on:
 env:
   RAILS_ENV: test
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/relay_help_test
-  DEVISE_JWT_SECRET_KEY: ${{ secrets.DEVISE_JWT_SECRET_KEY }}
-  SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
+  DEVISE_JWT_SECRET_KEY: ${{ secrets.DEVISE_JWT_SECRET_KEY || 'ci-test-jwt-key-not-for-production' }}
+  SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE || 'ci-test-secret-key-base-not-for-production-use-only-in-ci' }}
 
 jobs:
   test:
