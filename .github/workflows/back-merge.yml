@@ -1,0 +1,35 @@
+name: Back-merge to develop
+
+# After a hotfix or release merges to main, auto-create a PR to sync develop
+on:
+  push:
+    branches: [main]
+
+jobs:
+  back-merge:
+    name: Create back-merge PR
+    runs-on: ubuntu-latest
+
+    # Skip if the push was from the back-merge bot itself
+    if: "!contains(github.event.head_commit.message, 'back-merge')"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create PR main → develop
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: back-merge/main-to-develop
+          base: develop
+          title: "chore: back-merge main → develop"
+          body: |
+            Automated back-merge to keep `develop` in sync with `main`.
+
+            This was triggered by a merge to `main` (likely a hotfix or release).
+            Review and merge to keep branches aligned.
+          labels: automated, back-merge
+          delete-branch: true

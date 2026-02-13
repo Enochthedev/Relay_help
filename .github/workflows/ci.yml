@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [develop]
+
+env:
+  RAILS_ENV: test
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/relay_help_test
+  DEVISE_JWT_SECRET_KEY: ${{ secrets.DEVISE_JWT_SECRET_KEY }}
+  SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
+
+jobs:
+  test:
+    name: Tests & Security
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: relay_help_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3.0"
+          bundler-cache: true
+
+      - name: Set up database
+        run: |
+          bundle exec rails db:schema:load
+
+      - name: Run tests
+        run: |
+          bundle exec rspec --format documentation
+
+      - name: Security scan (Brakeman)
+        run: |
+          gem install brakeman
+          brakeman --no-pager -q -w2
+
+      - name: Bundle audit
+        run: |
+          gem install bundler-audit
+          bundle-audit check --update
+        continue-on-error: true # Advisory, don't block deploys
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3.0"
+          bundler-cache: true
+
+      - name: Run RuboCop
+        run: |
+          gem install rubocop rubocop-rails rubocop-rspec
+          rubocop --format simple
+        continue-on-error: true # Don't block until codebase is cleaned up

@@ -1,0 +1,24 @@
+name: Stale PR Cleanup
+
+# Auto-close stale PRs and issues
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 9am UTC
+
+jobs:
+  stale:
+    name: Close stale PRs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          stale-pr-message: >
+            This PR has been inactive for 14 days. It will be closed in 7 days
+            if no further activity occurs. Please update or close it manually
+            if it's no longer needed.
+          close-pr-message: >
+            Closed due to inactivity. Feel free to reopen if still relevant.
+          days-before-pr-stale: 14
+          days-before-pr-close: 7
+          stale-pr-label: stale
+          exempt-pr-labels: keep-open,in-progress
