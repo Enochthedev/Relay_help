@@ -69,7 +69,7 @@ module RelayHelp
     config.eager_load_paths += Dir["#{config.root}/app/domains/**/"]
     
     # Autoload lib directory
-    config.autoload_lib(ignore: %w(assets tasks))
+    config.autoload_lib(ignore: %w(assets tasks middleware))
 
     # CamelCase JSON responses for JavaScript frontend
     require_relative '../lib/middleware/camel_case_response_middleware'
