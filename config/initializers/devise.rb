@@ -313,7 +313,7 @@ Devise.setup do |config|
 
   # JWT Configuration
   config.jwt do |jwt|
-    jwt.secret = ENV.fetch('DEVISE_JWT_SECRET_KEY')
+    jwt.secret = ENV.fetch('DEVISE_JWT_SECRET_KEY', 'dummy-key-for-precompile')
     jwt.dispatch_requests = [
       ['POST', %r{^/api/v1/login$}]
     ]
