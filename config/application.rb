@@ -40,20 +40,28 @@ module RelayHelp
       allow do
         # Use CORS_ORIGINS env var in production, fallback to localhost for dev
         # Set CORS_ORIGINS="https://app.example.com,https://staging.example.com" in production
-        allowed_origins = ENV.fetch("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001")
-                            .split(",")
-                            .map(&:strip)
+        cors_origins_raw = ENV.fetch("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001")
 
-        origins(*allowed_origins)
-
-        resource "*",
-          headers: :any,
-          methods: [:get, :post, :put, :patch, :delete, :options, :head],
-          credentials: true,
-          # Expose headers the frontend might need
-          expose: %w[X-Total-Count X-Page X-Per-Page Authorization],
-          # Cache preflight requests for 1 hour (reduces OPTIONS requests)
-          max_age: 3600
+        # rack-cors 3.0 forbids credentials with wildcard origins.
+        # If wildcard, disable credentials; otherwise keep them enabled.
+        if cors_origins_raw.strip == "*"
+          origins "*"
+          resource "*",
+            headers: :any,
+            methods: [:get, :post, :put, :patch, :delete, :options, :head],
+            credentials: false,
+            expose: %w[X-Total-Count X-Page X-Per-Page Authorization],
+            max_age: 3600
+        else
+          allowed_origins = cors_origins_raw.split(",").map(&:strip)
+          origins(*allowed_origins)
+          resource "*",
+            headers: :any,
+            methods: [:get, :post, :put, :patch, :delete, :options, :head],
+            credentials: true,
+            expose: %w[X-Total-Count X-Page X-Per-Page Authorization],
+            max_age: 3600
+        end
       end
     end
     
