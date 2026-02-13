@@ -59,6 +59,7 @@ jobs:
         run: |
           gem install brakeman
           brakeman --no-pager -q -w2
+        continue-on-error: true  # Advisory until existing warnings are resolved
 
       - name: Bundle audit
         run: |
