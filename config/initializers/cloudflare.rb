@@ -7,8 +7,8 @@ require 'ipaddr'
 # instead of Cloudflare's proxy IP.
 #
 # Ranges are fetched from: https://www.cloudflare.com/ips/
-# We use a static list here to avoid network calls on boot, but you can
-# implement a dynamic fetch if preferred.
+# We use a static list here to avoid network calls on boot, but we will
+# implement a dynamic fetch in a later feat.
 #
 # Last updated: 2024-02
 
