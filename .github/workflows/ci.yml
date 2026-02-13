@@ -8,7 +8,7 @@ on:
 
 env:
   RAILS_ENV: test
-  DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/relay_help_test
   DEVISE_JWT_SECRET_KEY: ${{ secrets.DEVISE_JWT_SECRET_KEY }}
   SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
 
