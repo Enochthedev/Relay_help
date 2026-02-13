@@ -36,15 +36,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.3.0"
+          ruby-version: '3.3.0'
           bundler-cache: true
 
       - name: Set up database
         run: |
-          bundle exec rails db:schema:load
+          bundle exec rails db:create db:schema:load
 
       - name: Run tests
         run: |
@@ -59,7 +64,7 @@ jobs:
         run: |
           gem install bundler-audit
           bundle-audit check --update
-        continue-on-error: true # Advisory, don't block deploys
+        continue-on-error: true  # Advisory, don't block deploys
 
   lint:
     name: Lint
@@ -72,11 +77,11 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.3.0"
+          ruby-version: '3.3.0'
           bundler-cache: true
 
       - name: Run RuboCop
         run: |
           gem install rubocop rubocop-rails rubocop-rspec
           rubocop --format simple
-        continue-on-error: true # Don't block until codebase is cleaned up
+        continue-on-error: true  # Don't block until codebase is cleaned up
