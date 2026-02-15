@@ -3,7 +3,7 @@ builder = "nixpacks"
 buildCommand = "bundle install && bundle exec rails assets:precompile"
 
 [deploy]
-startCommand = "bundle exec rails db:migrate && bundle exec puma -C config/puma.rb"
+startCommand = "bundle exec puma -C config/puma.rb"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
