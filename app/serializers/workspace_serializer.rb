@@ -1,7 +1,7 @@
 class WorkspaceSerializer
   include JSONAPI::Serializer
 
-  attributes :id, :name, :slug, :plan, :created_at, :ai_token_balance, :time_zone, :language
+  attributes :id, :name, :slug, :plan, :created_at, :ai_token_balance, :time_zone, :language, :onboarding_complete
 
   attribute :logo_url do |workspace|
     if workspace.logo.attached?

@@ -12,6 +12,8 @@ class Workspace < ApplicationRecord
     enterprise: "enterprise"
   }
 
+  store_accessor :settings, :onboarding_complete
+
   # Associations
   has_many :workspace_memberships, dependent: :destroy
   has_many :users, through: :workspace_memberships

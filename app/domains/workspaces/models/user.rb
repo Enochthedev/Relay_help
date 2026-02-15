@@ -224,6 +224,11 @@ class User < ApplicationRecord
     # If the user has manually completed onboarding (flag), return false
     # return false if onboarding_completed?
     
+    # If valid onboarding flag is present, use it
+    if workspace.onboarding_complete == true || workspace.onboarding_complete == "true"
+      return false
+    end
+    
     # Front-end logic: ws === "" || ws === user.email || ws === user.name
     ws_name = workspace.name.strip.downcase
     user_name = name.to_s.strip.downcase

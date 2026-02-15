@@ -133,7 +133,7 @@ module Api
 
       def workspace_params
         # Allow updating slug and company_url if they exist, plus time_zone/language
-        params.require(:workspace).permit(:name, :slug, :company_url, :time_zone, :language, :logo, allowed_domains: [])
+        params.require(:workspace).permit(:name, :slug, :company_url, :time_zone, :language, :logo, :onboarding_complete, allowed_domains: [])
       end
     end
   end
