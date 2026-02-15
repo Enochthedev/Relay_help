@@ -11,9 +11,10 @@ class Api::V1::BaseController < ApplicationController
     @current_workspace ||= current_user&.workspace
   end
 
-  def render_success(data: nil, message: nil, status: :ok)
+  def render_success(data: nil, message: nil, status: :ok, meta: nil)
     response = { status: { code: Rack::Utils.status_code(status), message: message } }
     response[:data] = data if data
+    response[:meta] = meta if meta
     render json: response, status: status
   end
 
