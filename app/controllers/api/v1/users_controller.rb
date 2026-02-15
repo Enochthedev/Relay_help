@@ -27,12 +27,18 @@ class Api::V1::UsersController < Api::V1::BaseController
     
     current_user.update!(workspace: workspace)
     
-    # Refresh tokens to include new workspace context?
-    # For now, just updating the context is enough as long as API calls
-    # rely on current_user.workspace_id
-    
+    # Refresh tokens to include new workspace context
+    token = Warden::JWTAuth::UserEncoder.new.call(current_user, :user, nil).first
+    refresh_token = RefreshToken.generate_for(current_user, request: request).token
+
     render_success(
       data: UserSerializer.new(current_user).serializable_hash[:data][:attributes],
+      meta: {
+        accessToken: token,
+        refreshToken: refresh_token,
+        expiresIn: 86400,
+        refreshExpiresIn: 604800
+      },
       message: "Switched to workspace: #{workspace.name}"
     )
   rescue ActiveRecord::RecordNotFound
