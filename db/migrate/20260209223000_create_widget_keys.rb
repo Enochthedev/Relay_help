@@ -33,6 +33,7 @@ class CreateWidgetKeys < ActiveRecord::Migration[7.1]
       )
     end
   end
+end
 
   class MigrationWorkspace < ActiveRecord::Base
     self.table_name = 'workspaces'
@@ -41,4 +42,3 @@ class CreateWidgetKeys < ActiveRecord::Migration[7.1]
   class MigrationWidgetKey < ActiveRecord::Base
     self.table_name = 'widget_keys'
   end
-end
