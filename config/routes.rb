@@ -19,6 +19,10 @@ Rails.application.routes.draw do
       # User Profile
       get 'me', to: 'users#me'
       post 'workspaces/:id/switch', to: 'users#switch_workspace'
+      
+      # Social Auth
+      get 'auth/:provider', to: 'auth#redirect'
+      get 'auth/:provider/callback', to: 'auth#callback'
 
       # ============ Platform Admin ============
       get 'admin/workspaces', to: 'users#index_workspaces'
@@ -42,7 +46,20 @@ Rails.application.routes.draw do
       end
 
       # ============ Protected routes (Workspace owners) ============
-      # resources :workspaces, only: [:show, :update]
+      # ============ Protected routes (Workspace owners) ============
+      
+      # Singular resource for current context
+      resource :workspace, only: [:show, :update, :destroy], controller: 'workspaces' do
+        collection do
+          get '', to: 'workspaces#show_current'
+          patch '', to: 'workspaces#update_current'
+          delete '', to: 'workspaces#destroy_current'
+        end
+      end
+
+      # Standard CRUD resources
+      resources :workspaces, only: [:index, :show, :create, :update, :destroy]
+
       # resources :tickets, only: [:index, :show, :create, :update]
       # resources :team, only: [:index, :create, :destroy]
       
@@ -52,6 +69,9 @@ Rails.application.routes.draw do
 
   # Legacy devise routes (Web dashboard login)
   devise_for :users
+
+  # OmniAuth Callbacks (Must be at root level because OmniAuth defaults to /auth/:provider/callback)
+  get '/auth/:provider/callback', to: 'api/v1/auth#callback'
 
   # Pages
   get 'pages/home'

@@ -13,9 +13,15 @@ gem "stimulus-rails"
 gem "tailwindcss-rails"
 gem "importmap-rails"
 
+
 # Auth
 gem "devise"
 gem 'devise-jwt'
+gem 'omniauth'
+gem 'omniauth-discord'
+gem 'omniauth-google-oauth2'
+# gem 'omniauth-apple'
+gem 'omniauth-rails_csrf_protection'
 
 # Error tracking
 gem 'sentry-ruby'
@@ -29,6 +35,7 @@ gem 'appsignal'
 
 # API
 gem 'rack-cors'
+gem 'rack-attack'
 gem 'jsonapi-serializer'
 
 # Background jobs - PostgreSQL-based (no Redis needed!)
