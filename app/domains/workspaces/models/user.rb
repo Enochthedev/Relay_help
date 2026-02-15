@@ -215,6 +215,7 @@ class User < ApplicationRecord
     end
   end
 
+  def needs_onboarding?
     # Use onboarding_phase
     return false if onboarding_phase == 'completed'
     
