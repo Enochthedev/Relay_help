@@ -35,4 +35,8 @@ class UserSerializer
       }
     end
   end
+
+  attribute :onboarding_complete do |user|
+    !user.needs_onboarding?
+  end
 end

@@ -5,10 +5,11 @@ class Api::V1::WidgetKeysController < Api::V1::BaseController
 
   # GET /api/v1/widget_keys
   def index
-    keys = current_workspace.widget_keys.active.order(created_at: :desc)
+    keys = current_workspace.widget_keys.order(created_at: :desc)
     
+    data = WidgetKeySerializer.new(keys).serializable_hash[:data].map { |resource| resource[:attributes] }
     render_success(
-      data: WidgetKeySerializer.new(keys).serializable_hash[:data],
+      data: data,
       message: 'Widget keys retrieved successfully'
     )
   end

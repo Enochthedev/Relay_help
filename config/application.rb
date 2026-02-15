@@ -35,6 +35,9 @@ module RelayHelp
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore, config.session_options
 
+    # Rack::Attack middleware for rate limiting and blocking
+    config.middleware.use Rack::Attack
+
     # Add CORS support for Next.js frontend
     config.middleware.insert_before 0, Rack::Cors do
       allow do
