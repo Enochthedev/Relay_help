@@ -18,6 +18,7 @@ Rails.application.routes.draw do
 
       # User Profile
       get 'me', to: 'users#me'
+      patch 'me', to: 'users#update'
       post 'workspaces/:id/switch', to: 'users#switch_workspace'
       
       # Social Auth

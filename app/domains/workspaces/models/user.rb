@@ -215,22 +215,20 @@ class User < ApplicationRecord
     end
   end
 
-  def needs_onboarding?
-    # Heuristic: workspace name looks auto-generated (matches pattern "Name's Workspace")
-    # OR matches user's name/email directly (as per typical SAAS defaults)
+    # Use onboarding_phase
+    return false if onboarding_phase == 'completed'
     
-    return false unless workspace
+    # If no phase set yet (or nil), assume we need onboarding
+    # But for backward compatibility with existing users, maybe check workspace name heuristic if phase is nil?
+    # Actually, migration sets default="created", so existing rows might be null if not backfilled.
     
-    # If the user has manually completed onboarding (flag), return false
-    # return false if onboarding_completed?
-    
-    # If valid onboarding flag is present, use it
-    if workspace.onboarding_complete == true || workspace.onboarding_complete == "true"
-      return false
+    if onboarding_phase.present?
+      return onboarding_phase != 'completed'
     end
-    
+
+    # Fallback to legacy check if phase is nil (for existing users before migration ran on them)
     # Front-end logic: ws === "" || ws === user.email || ws === user.name
-    ws_name = workspace.name.strip.downcase
+    ws_name = workspace&.name.to_s.strip.downcase
     user_name = name.to_s.strip.downcase
     user_email = email.to_s.strip.downcase
     
@@ -238,7 +236,6 @@ class User < ApplicationRecord
     return true if ws_name == user_email
     return true if ws_name == user_name
     
-    # Also check for the default "Name's Workspace" pattern from omniauth
     default_name = "#{name}'s Workspace".downcase
     return true if ws_name == default_name
     

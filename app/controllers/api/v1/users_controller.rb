@@ -9,6 +9,18 @@ class Api::V1::UsersController < Api::V1::BaseController
     )
   end
 
+  # PATCH /api/v1/me (or similar, assuming routes updated)
+  def update
+    if current_user.update(update_params)
+      render_success(
+        data: UserSerializer.new(current_user).serializable_hash[:data][:attributes],
+        message: 'User profile updated successfully'
+      )
+    else
+      render_error(message: current_user.errors.full_messages.join(', '), status: :unprocessable_entity)
+    end
+  end
+
   # POST /api/v1/workspaces/:id/switch
   def switch_workspace
     workspace = current_user.workspaces.find(params[:id])
@@ -57,5 +69,9 @@ class Api::V1::UsersController < Api::V1::BaseController
       total_count: collection.total_count,
       per_page: collection.limit_value
     }
+  end
+
+  def update_params
+    params.require(:user).permit(:name, :onboarding_phase)
   end
 end

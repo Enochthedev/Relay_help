@@ -3,7 +3,7 @@
 class UserSerializer
   include JSONAPI::Serializer
 
-  attributes :id, :email, :name, :role
+  attributes :id, :email, :name, :role, :onboarding_phase
 
   attribute :workspace_id do |user|
     user.workspace_id
