@@ -14,6 +14,7 @@ class User < ApplicationRecord
   has_many :assigned_tickets, class_name: "Ticket", foreign_key: "assigned_to_id", dependent: :nullify
   has_many :messages, dependent: :nullify
   has_many :refresh_tokens, dependent: :delete_all
+  has_many :identities, dependent: :destroy
 
   # Delegated role methods (based on current workspace context)
   delegate :role, to: :current_membership, allow_nil: true
@@ -129,5 +130,113 @@ class User < ApplicationRecord
 
   def discord_only?
     discord_connected? && !can_login?
+  end
+
+  # Social Auth
+  def self.from_omniauth(auth)
+    # 1. Check if identity exists
+    identity = Identity.where(provider: auth.provider, uid: auth.uid).first
+    return identity.user if identity
+
+    # 2. Check if user exists with email
+    email = auth.info.email
+    user = User.find_by(email: email) if email
+
+    if user
+      # Link identity to existing user
+      user.identities.create!(
+        provider: auth.provider,
+        uid: auth.uid,
+        email: email,
+        name: auth.info.name,
+        avatar_url: auth.info.image,
+        raw_info: auth.extra.raw_info
+      )
+      
+      # Update missing info if needed (e.g. avatar)
+      if user.avatar_url.blank? && auth.info.image.present?
+        user.update(avatar_url: auth.info.image)
+      end
+      
+      return user
+    end
+
+    # 3. Create new user and workspace
+    ActiveRecord::Base.transaction do
+      # Create workspace
+      workspace_name = "#{auth.info.name}'s Workspace"
+      workspace_slug = workspace_name.parameterize
+      
+      # Handle slug collision strictly
+      if Workspace.exists?(slug: workspace_slug)
+        workspace_slug = "#{workspace_slug}-#{SecureRandom.hex(4)}"
+      end
+      
+      workspace = Workspace.create!(
+        name: workspace_name,
+        slug: workspace_slug,
+        plan: "free"
+      )
+
+      # Create user
+      user = User.create!(
+        email: email,
+        password: Devise.friendly_token[0, 20],
+        name: auth.info.name,
+        workspace: workspace, # Set context
+        role: "owner", # Founder is owner
+        avatar_url: auth.info.image,
+        # Determine language/timezone if available or default
+        # language: ...
+        # time_zone: ...
+        platform_admin: false,
+        invitation_status: "accepted", # They signed up themselves
+        email_verified_at: Time.current # OAuth emails are verified
+      )
+      
+      # Create membership
+      WorkspaceMembership.create!(
+        user: user,
+        workspace: workspace,
+        role: "owner"
+      )
+      
+      # Create identity
+      user.identities.create!(
+        provider: auth.provider,
+        uid: auth.uid,
+        email: email,
+        name: auth.info.name,
+        avatar_url: auth.info.image,
+        raw_info: auth.extra.raw_info
+      )
+      
+      user
+    end
+  end
+
+  def needs_onboarding?
+    # Heuristic: workspace name looks auto-generated (matches pattern "Name's Workspace")
+    # OR matches user's name/email directly (as per typical SAAS defaults)
+    
+    return false unless workspace
+    
+    # If the user has manually completed onboarding (flag), return false
+    # return false if onboarding_completed?
+    
+    # Front-end logic: ws === "" || ws === user.email || ws === user.name
+    ws_name = workspace.name.strip.downcase
+    user_name = name.to_s.strip.downcase
+    user_email = email.to_s.strip.downcase
+    
+    return true if ws_name.blank?
+    return true if ws_name == user_email
+    return true if ws_name == user_name
+    
+    # Also check for the default "Name's Workspace" pattern from omniauth
+    default_name = "#{name}'s Workspace".downcase
+    return true if ws_name == default_name
+    
+    false
   end
 end

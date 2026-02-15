@@ -1,4 +1,5 @@
 class Workspace < ApplicationRecord
+  has_one_attached :logo
 
   before_validation :generate_slug, on: :create
   before_create :generate_widget_keys # Legacy columns

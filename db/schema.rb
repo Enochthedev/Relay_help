@@ -10,10 +10,38 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_09_223000) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_15_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
+
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.uuid "record_id", null: false
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
 
   create_table "ai_requests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "workspace_id", null: false
@@ -96,6 +124,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_09_223000) do
     t.datetime "updated_at", null: false
     t.index ["guild_id"], name: "index_discord_guilds_on_guild_id", unique: true
     t.index ["workspace_id"], name: "index_discord_guilds_on_workspace_id", unique: true
+  end
+
+  create_table "identities", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "provider"
+    t.string "uid"
+    t.string "email"
+    t.string "name"
+    t.string "avatar_url"
+    t.json "raw_info"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_identities_on_user_id"
   end
 
   create_table "jwt_denylist", force: :cascade do |t|
@@ -334,6 +375,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_09_223000) do
     t.boolean "two_factor_verified", default: false, null: false
     t.datetime "email_verified_at"
     t.datetime "discord_connected_at"
+    t.string "avatar_url"
+    t.string "language"
+    t.string "time_zone"
     t.index ["discord_user_id"], name: "index_users_on_discord_user_id", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["invitation_status"], name: "index_users_on_invitation_status"
@@ -344,107 +388,3 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_09_223000) do
     t.index ["workspace_id"], name: "index_users_on_workspace_id"
   end
 
-  create_table "widget_keys", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "workspace_id", null: false
-    t.string "public_key", null: false
-    t.string "secret_key", null: false
-    t.string "label", default: "Default", null: false
-    t.text "allowed_domains", default: [], array: true
-    t.datetime "last_used_at"
-    t.integer "requests_count", default: 0
-    t.string "status", default: "active"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["public_key"], name: "index_widget_keys_on_public_key", unique: true
-    t.index ["status"], name: "index_widget_keys_on_status"
-    t.index ["workspace_id"], name: "index_widget_keys_on_workspace_id"
-  end
-
-  create_table "widget_sessions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "workspace_id", null: false
-    t.uuid "customer_id"
-    t.string "session_token", null: false
-    t.string "fingerprint"
-    t.string "page_url"
-    t.string "referrer"
-    t.jsonb "metadata", default: {}
-    t.boolean "websocket_connected", default: false
-    t.datetime "last_seen_at"
-    t.datetime "expires_at", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["customer_id"], name: "index_widget_sessions_on_customer_id"
-    t.index ["expires_at"], name: "index_widget_sessions_on_expires_at"
-    t.index ["session_token"], name: "index_widget_sessions_on_session_token", unique: true
-    t.index ["workspace_id", "websocket_connected"], name: "index_widget_sessions_active"
-    t.index ["workspace_id"], name: "index_widget_sessions_on_workspace_id"
-  end
-
-  create_table "workspace_memberships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "user_id", null: false
-    t.uuid "workspace_id", null: false
-    t.string "role", default: "member", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["role"], name: "index_workspace_memberships_on_role"
-    t.index ["user_id", "workspace_id"], name: "index_workspace_memberships_on_user_id_and_workspace_id", unique: true
-    t.index ["user_id"], name: "index_workspace_memberships_on_user_id"
-    t.index ["workspace_id"], name: "index_workspace_memberships_on_workspace_id"
-  end
-
-  create_table "workspaces", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.string "name", null: false
-    t.string "slug", null: false
-    t.string "plan", default: "free", null: false
-    t.integer "ai_token_balance", default: 0, null: false
-    t.integer "monthly_ticket_limit", default: 100, null: false
-    t.integer "tickets_used_this_month", default: 0, null: false
-    t.jsonb "settings", default: {}
-    t.datetime "last_reset_at"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.boolean "lockdown_mode", default: false, null: false
-    t.string "lockdown_reason"
-    t.datetime "lockdown_activated_at"
-    t.uuid "lockdown_activated_by_id"
-    t.string "widget_api_key"
-    t.string "widget_secret_key"
-    t.string "allowed_domains", default: [], array: true
-    t.jsonb "widget_settings", default: {"theme"=>"light", "greeting"=>"Hi! How can we help you today?", "position"=>"bottom-right", "require_email"=>true, "show_branding"=>true, "offline_message"=>"We are currently offline. Leave a message and we will get back to you."}
-    t.index ["lockdown_activated_by_id"], name: "index_workspaces_on_lockdown_activated_by_id"
-    t.index ["lockdown_mode"], name: "index_workspaces_on_lockdown_mode"
-    t.index ["slug"], name: "index_workspaces_on_slug", unique: true
-    t.index ["widget_api_key"], name: "index_workspaces_on_widget_api_key", unique: true
-  end
-
-  add_foreign_key "ai_requests", "tickets"
-  add_foreign_key "ai_requests", "users"
-  add_foreign_key "ai_requests", "workspaces"
-  add_foreign_key "api_keys", "users", column: "created_by_id"
-  add_foreign_key "api_keys", "workspaces"
-  add_foreign_key "audit_logs", "users"
-  add_foreign_key "audit_logs", "workspaces"
-  add_foreign_key "customers", "workspaces"
-  add_foreign_key "discord_guilds", "workspaces"
-  add_foreign_key "messages", "customers"
-  add_foreign_key "messages", "tickets"
-  add_foreign_key "messages", "users"
-  add_foreign_key "refresh_tokens", "users"
-  add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "tickets", "customers"
-  add_foreign_key "tickets", "users", column: "assigned_to_id"
-  add_foreign_key "tickets", "widget_sessions"
-  add_foreign_key "tickets", "workspaces"
-  add_foreign_key "users", "workspaces"
-  add_foreign_key "widget_keys", "workspaces"
-  add_foreign_key "widget_sessions", "customers"
-  add_foreign_key "widget_sessions", "workspaces"
-  add_foreign_key "workspace_memberships", "users"
-  add_foreign_key "workspace_memberships", "workspaces"
-  add_foreign_key "workspaces", "users", column: "lockdown_activated_by_id"
-end
