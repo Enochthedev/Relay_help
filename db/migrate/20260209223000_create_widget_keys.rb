@@ -17,14 +17,6 @@ class CreateWidgetKeys < ActiveRecord::Migration[7.1]
     add_index :widget_keys, :status
     
     # Backfill existing keys using local models to avoid app dependency issues
-    class MigrationWorkspace < ActiveRecord::Base
-      self.table_name = 'workspaces'
-    end
-
-    class MigrationWidgetKey < ActiveRecord::Base
-      self.table_name = 'widget_keys'
-    end
-
     MigrationWorkspace.reset_column_information
     MigrationWidgetKey.reset_column_information
 
@@ -40,5 +32,13 @@ class CreateWidgetKeys < ActiveRecord::Migration[7.1]
         status: "active"
       )
     end
+  end
+
+  class MigrationWorkspace < ActiveRecord::Base
+    self.table_name = 'workspaces'
+  end
+
+  class MigrationWidgetKey < ActiveRecord::Base
+    self.table_name = 'widget_keys'
   end
 end
