@@ -388,3 +388,4 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_15_190000) do
     t.index ["workspace_id"], name: "index_users_on_workspace_id"
   end
 
+end
