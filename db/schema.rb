@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_15_233000) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_15_235500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -458,6 +458,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_15_233000) do
     t.jsonb "widget_settings", default: {"theme"=>"light", "greeting"=>"Hi! How can we help you today?", "position"=>"bottom-right", "require_email"=>true, "show_branding"=>true, "offline_message"=>"We are currently offline. Leave a message and we will get back to you."}
     t.string "time_zone"
     t.string "language"
+    t.string "company_url"
     t.index ["lockdown_activated_by_id"], name: "index_workspaces_on_lockdown_activated_by_id"
     t.index ["lockdown_mode"], name: "index_workspaces_on_lockdown_mode"
     t.index ["slug"], name: "index_workspaces_on_slug", unique: true
