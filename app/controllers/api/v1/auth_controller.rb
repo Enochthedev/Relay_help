@@ -61,7 +61,7 @@ module Api
         # Log error
         Rails.logger.error("Auth Error: #{e.message}")
         frontend_url = ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
-        redirect_to "#{frontend_url}/auth/login?error=Authentication failed", allow_other_host: true
+        redirect_to "#{frontend_url}/auth/login?error=Authentication failed: #{e.message}", allow_other_host: true
       end
       
       private
