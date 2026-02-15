@@ -34,7 +34,7 @@ module Api
         if auth.nil?
           # If auth is nil, something went wrong with OmniAuth
           frontend_url = ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
-          return redirect_to "#{frontend_url}/auth/login?error=Authentication failed"
+          return redirect_to "#{frontend_url}/auth/login?error=Authentication failed", allow_other_host: true
         end
         
         # Find or create user from omniauth data
@@ -45,22 +45,23 @@ module Api
           token = Warden::JWTAuth::UserEncoder.new.call(@user, :user, nil).first
           
           # Create a refresh token
-          refresh_token_string = generate_refresh_token(@user)
+          refresh_token_record = RefreshToken.generate_for(@user, request: request)
+          refresh_token_string = refresh_token_record.token
           
           # Redirect to frontend with tokens
           frontend_url = ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
           
-          redirect_to "#{frontend_url}/auth/callback?accessToken=#{token}&refreshToken=#{refresh_token_string}&expiresIn=86400&refreshExpiresIn=604800"
+          redirect_to "#{frontend_url}/auth/callback?accessToken=#{token}&refreshToken=#{refresh_token_string}&expiresIn=86400&refreshExpiresIn=604800", allow_other_host: true
         else
           # Redirect to login with error
           frontend_url = ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
-          redirect_to "#{frontend_url}/auth/login?error=Could not sign in with #{params[:provider].titleize}"
+          redirect_to "#{frontend_url}/auth/login?error=Could not sign in with #{params[:provider].titleize}", allow_other_host: true
         end
       rescue StandardError => e
         # Log error
         Rails.logger.error("Auth Error: #{e.message}")
         frontend_url = ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
-        redirect_to "#{frontend_url}/auth/login?error=Authentication failed"
+        redirect_to "#{frontend_url}/auth/login?error=Authentication failed", allow_other_host: true
       end
       
       private
